@@ -48,7 +48,7 @@
         #note-list li:hover {
             background-color: #34495e;
         }
-        #new-note, #delete-note {
+        #new-note, #delete-note, #save-settings, #import-settings, #updates {
             background-color: #3498db;
             color: white;
             border: none;
@@ -58,7 +58,7 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        #new-note:hover, #delete-note:hover {
+        #new-note:hover, #delete-note:hover, #save-settings:hover, #import-settings:hover, #updates:hover {
             background-color: #2980b9;
         }
         #note-title {
@@ -84,6 +84,14 @@
             margin-top: 10px;
             text-align: center;
         }
+        #instructions {
+            padding: 10px;
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            margin-top: 20px;
+            border-radius: 5px;
+            display: none; /* Initially hidden */
+        }
     </style>
 </head>
 <body>
@@ -94,6 +102,10 @@
             <ul id="note-list"></ul>
             <button id="new-note">New Note</button>
             <button id="delete-note">Delete Note</button>
+            <button id="save-settings">Save Settings</button>
+            <button id="import-settings">Import Settings</button>
+            <button id="updates">Updates</button>
+            <input type="file" id="import-settings-file" style="display:none">
         </div>
         <div id="version-info">
             Version: Alpha v1<br>
@@ -103,12 +115,23 @@
     <div id="content">
         <input type="text" id="note-title" placeholder="Note Title">
         <textarea id="note-content" placeholder="Start typing your note here..."></textarea>
+        <div id="instructions">
+            <h2>Import & Export Features</h2>
+            <p>You can now save your notes and settings using the "Save Settings" button. This will export all your current notes to a <strong>.sex</strong> file.</p>
+            <p>To import settings, click the "Import Settings" button and upload a <strong>.sex</strong> file. This will restore your notes and their contents.</p>
+            <p>Check out the latest updates by clicking the "Updates" button!</p>
+        </div>
     </div>
 
     <script>
         const noteList = document.getElementById('note-list');
         const newNoteBtn = document.getElementById('new-note');
         const deleteNoteBtn = document.getElementById('delete-note');
+        const saveSettingsBtn = document.getElementById('save-settings');
+        const importSettingsBtn = document.getElementById('import-settings');
+        const importSettingsFile = document.getElementById('import-settings-file');
+        const updatesBtn = document.getElementById('updates');
+        const instructionsDiv = document.getElementById('instructions');
         const noteTitle = document.getElementById('note-title');
         const noteContent = document.getElementById('note-content');
         const searchBox = document.getElementById('search-box');
@@ -191,8 +214,55 @@
             });
         }
 
+        // Save settings to a .sex file
+        function saveSettings() {
+            const settings = {
+                notes,
+                currentNote
+            };
+            const blob = new Blob([JSON.stringify(settings)], {type: "application/json"});
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "settings.sex";
+            link.click();
+        }
+
+        // Trigger file input when clicking import settings
+        importSettingsBtn.addEventListener('click', () => {
+            importSettingsFile.click();
+        });
+
+        // Import settings from a .sex file
+        importSettingsFile.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file && file.name.endsWith('.sex')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const importedSettings = JSON.parse(e.target.result);
+                    notes = importedSettings.notes || [];
+                    currentNote = importedSettings.currentNote || null;
+                    saveNotes();
+                    renderNotes();
+                    if (currentNote) loadNote(currentNote);
+                };
+                reader.readAsText(file);
+            } else {
+                alert("Please upload a valid .sex file.");
+            }
+        });
+
+        // Toggle the visibility of the updates section
+        updatesBtn.addEventListener('click', () => {
+            if (instructionsDiv.style.display === "none" || instructionsDiv.style.display === "") {
+                instructionsDiv.style.display = "block";
+            } else {
+                instructionsDiv.style.display = "none";
+            }
+        });
+
         newNoteBtn.addEventListener('click', createNote);
         deleteNoteBtn.addEventListener('click', deleteNote);
+        saveSettingsBtn.addEventListener('click', saveSettings);
         noteTitle.addEventListener('input', updateCurrentNote);
         noteContent.addEventListener('input', updateCurrentNote);
         searchBox.addEventListener('input', searchNotes);
